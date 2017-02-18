@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+# Force user to run this script with sudo.
 if [[ $UID != 0 ]]; then
     echo "Please run this script with sudo:"
     echo "sudo $0 $*"
@@ -26,30 +28,30 @@ read -s MYSQL_PASS
 
 # echo "MariaDB $MYSQL_USER:$MYSQL_PASS"
 
-# Update Package List
+# Update package list
 apt-get update
 
-# Update System Packages
+# Update system packages
 apt-get -y upgrade
 
-# Install Some PPAs
+# Install some PPAs
 apt-get install -y software-properties-common curl
 apt-add-repository ppa:nginx/development -y
 apt-add-repository ppa:chris-lea/redis-server -y
 apt-add-repository ppa:ondrej/php -y
 curl --silent --location https://deb.nodesource.com/setup_6.x | bash -
 
-# Update Package Lists
+# Update package lists
 apt-get update
 
-# Install Some Basic Packages
+# Install some basic packages
 apt-get install -y dos2unix git libmcrypt4 \
 libpcre3 python2.7 python-pip supervisor
 
-# Set My Timezone
+# Set your timezone (UTC).
 ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
-# Install PHP Stuffs
+# Install PHP stuffs
 apt-get install -y --force-yes php7.1-cli php7.1 \
 php7.1-pgsql php7.1-sqlite3 php7.1-gd \
 php7.1-curl php7.1-memcached \
@@ -64,38 +66,40 @@ mv composer.phar /usr/local/bin/composer
 # Install Apache
 apt-get install -y --force-yes apache2
 
-# Add Vagrant User To WWW-Data
+# Add your user to www-data
 usermod -a -G www-data $MY_USER
 id $MY_USER
 groups $MY_USER
 
-# Changes ownership of /var/www
+# Transfer ownership of /var/www to your user
 sudo chown -R $MY_USER:www-data /var/www
 sudo chmod -R g+s /var/www
 
-# Install Node
+# Install Node and some Node packages
 apt-get install -y nodejs
 /usr/bin/npm install -g gulp
 /usr/bin/npm install -g bower
 /usr/bin/npm install -g yarn
 /usr/bin/npm install -g grunt-cli
 
-# Install MySQL
+# Install MariaDB
 apt-get install -y mariadb-server mariadb-client
 
-# Configure MySQL Remote Access
+# Configure MariaDB Remote Access
 # sed -i '/^bind-address/s/bind-address.*=.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
 
 # mysql --user="root" --password="" -e "GRANT ALL ON *.* TO root@'0.0.0.0' IDENTIFIED BY 'secret' WITH GRANT OPTION;"
 # service mysql restart
 
+# Creates a new MySQL/MariaDB user using the provided credentials. 
+# This is done to avoid using root for database operations.
 mysql --user="root" --password="" -e "CREATE USER '$MYSQL_USER'@'0.0.0.0' IDENTIFIED BY '$MYSQL_PASS';"
 mysql --user="root" --password="" -e "GRANT ALL ON *.* TO '$MYSQL_USER'@'0.0.0.0' IDENTIFIED BY '$MYSQL_PASS' WITH GRANT OPTION;"
 mysql --user="root" --password="" -e "GRANT ALL ON *.* TO '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASS' WITH GRANT OPTION;"
 mysql --user="root" --password="" -e "FLUSH PRIVILEGES;"
 service mysql restart
 
-# Install A Few Other Things
+# Install a few other things
 apt-get install -y redis-server memcached beanstalkd
 
 # Configure Beanstalkd
@@ -106,14 +110,15 @@ sed -i "s/#START=yes/START=yes/" /etc/default/beanstalkd
 systemctl enable supervisor.service
 service supervisor start
 
-# Install certbot
+# Install Certbot
 wget https://dl.eff.org/certbot-auto -P /opt/certbot
 chmod +x /opt/certbot/certbot-auto
 
-# Clean Up
+# Clean up
 apt-get -y autoremove
 apt-get -y clean
 
+# Done!
 echo " ____                   _ "
 echo "|  _ \  ___  _ __   ___| |"
 echo "| | | |/ _ \| '_ \ / _ \ |"
